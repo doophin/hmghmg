@@ -68,6 +68,7 @@ class Foo(Messg):
         if self.zd==0:
             sl=0
             el=50
+            self.zdflag=False
         elif self.zd > 0 and self.zd < 51:
             sl=self.zd-1
             el=self.zd
