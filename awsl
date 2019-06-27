@@ -11,7 +11,7 @@
 
 #使用wgethmy.py请pip install wget
 
-#请把hmg.py和hmg.ini放在同一文件夹下
+#请把hmg.py或wgethmg.py和hmg.ini放在同一文件夹下
 
 #自学python，写的不好欢迎指正
 
