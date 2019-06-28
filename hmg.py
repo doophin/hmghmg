@@ -23,9 +23,6 @@ class Messg():
     def imgok(self):
         print u'此页已下载'
         
-    def bimgok(self):
-        print u'此页副本已下载'
-        
     def aimgok(self):
         print u'已全下载完毕'
         
