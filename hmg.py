@@ -151,7 +151,7 @@ class Foo(Messg):
                 print dirne
                 self.direx()
 
-###对四种图片名配置###
+###对两种图片格式配置###
     def nameimg(self,imgname):
         self.imgname=imgname
         self.jpgname=imgname+".jpg"
