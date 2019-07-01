@@ -212,8 +212,6 @@ class Foo(Messg):
         a=self.f
         for i in range(self.zd,self.zdend):
             self.downstart()
-            self.dirname=a[i][0].decode('utf-8')
-            print self.dirname
             for j in range(self.page,int(a[i][2])+1):
                 flag=False
                 url="https://c.mipcdn.com/i/s/https://img.comicstatic.xyz/img/cn/"+a[i][1]+"/"+str(j)

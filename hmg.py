@@ -61,11 +61,25 @@ class Messg():
             print u'region语种参数错误'
     
 class Foo(Messg):   
+    def onelong(self):
+        headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.109 Safari/537.36"}
+        originurl=self.url
+        fir=requests.get(originurl,headers=headers,verify="cacert.pem")
+        fir_bs=BeautifulSoup(fir.text,'lxml')
+        page=fir_bs.find_all(['img','td'])
+        title=str(page[0]).split("\"")[1]
+        allpage=re.compile(r'\<.*?\>').sub('',str(page[2]))
+        id=str(page[4]).split("\"")[3].split("/")[5]
+        sign=self.url[19:21]
+        self.f=[]
+        self.f.append([title,id,allpage,'0',sign])
+        self.creatlocal()
+        
 ###对整个网络页面进行爬取###
     def ana(self):
         headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.109 Safari/537.36"}
         originurl=self.url
-        fir=requests.get(originurl,headers=headers)
+        fir=requests.get(originurl,headers=headers,verify="cacert.pem")
         fir_bs=BeautifulSoup(fir.text,'lxml')
         page=fir_bs.find_all(['h2','img','table'])
         self.f=[]
@@ -100,6 +114,8 @@ class Foo(Messg):
     def cklocal(self):
         if os.path.exists(self.localf):
             self.loadlocal()
+        elif self.url[19:21] in ["cn","en","ja"]:
+            self.onelong()
         else:
             self.ana()
             
@@ -127,7 +143,8 @@ class Foo(Messg):
         elif self.zd > 0 and self.zd < 51:
             self.region="all"
             self.zdflag=True
-            self.zdend=self.zd+1
+            self.zdend=self.zd
+            self.zd=self.zd-1
         else:
             self.zderr()
             exit()
@@ -138,17 +155,20 @@ class Foo(Messg):
         
 ###检查文件夹是否存在###                
     def mckdir(self):
+        self.ddir=os.path.join(self.localdown,self.localddir)
+        if os.path.exists(self.ddir) == False:
+            os.mkdir(self.ddir)
         a=self.f
         for i in range(self.zd,self.zdend):
             self.ckdirname(a[i][0])
             dirne=self.dirname
-            dirna=os.path.join(os.getcwd(),dirne.decode('utf-8'))
+            dirna=os.path.join(self.ddir,dirne.decode('utf-8'))
             if os.path.exists(dirna) == False:
-                os.mkdir(dirne.decode('utf-8'))
-                print dirne
+                os.mkdir(dirna)
+                print dirne.decode('utf-8').encode('gbk','ignore')
                 self.dirok()
             else:
-                print dirne
+                print dirne.decode('utf-8').encode('gbk','ignore')
                 self.direx()
 
 ###对两种图片格式配置###
@@ -174,15 +194,15 @@ class Foo(Messg):
 ###文件夹下载完毕整理###
     def clndir(self,apage):
         for k in range(1,apage+1):
-            imgname=os.path.join(self.dirname,str(k))
+            imgname=os.path.join(self.ddir,self.dirname.decode('utf-8'),str(k))
             self.nameimg(imgname)
             self.clnimg(self.jpgname,self.pngname)
-        print self.dirname
+        print self.dirname.decode('utf-8').encode('gbk','ignore')
         self.aimgok()      
 
 ###下载###
     def downtool(self,url,out):
-        r=requests.get(url)
+        r=requests.get(url,verify="cacert.pem")
         with open(out,"wb") as f:
             f.write(r.content)
         f.close()
@@ -191,27 +211,25 @@ class Foo(Messg):
     def imgdown(self):
         a=self.f
         for i in range(self.zd,self.zdend):
+            self.ckdirname(a[i][0])
             self.downstart()
-            self.dirname=a[i][0].decode('utf-8')
-            print self.dirname
             for j in range(self.page,int(a[i][2])+1):
                 flag=False
                 url="https://c.mipcdn.com/i/s/https://img.comicstatic.xyz/img/cn/"+a[i][1]+"/"+str(j)
                 iurl=url+self.hzflag
-                imgname=os.path.join(self.dirname,str(j))
+                imgname=os.path.join(self.ddir,self.dirname.decode('utf-8'),str(j))
                 self.imgdname=imgname+self.hzflag
                 imgflag=self.ckimg(imgname)
                 if imgflag:
                     if j == int(a[i][2]):
                         self.clndir(j)
                     continue
-                
                 if imgflag == False:
-                    print "开始下载第"+str(j)+"页，共"+a[i][2]+"页"
+                    print u'开始下载第'+str(j)+u'页，共'+a[i][2]+u'页'
                     self.downtool(iurl,self.imgdname)
                     count=0
                     while int(os.path.getsize(self.imgdname)) == 0 and count < self.rdcount+1:
-                        print "第"+str(j)+"页下载失败，重新开始下载"
+                        print u'第'+str(j)+u'页下载失败，重新开始下载'
                         self.rdwait()
                         self.downtool(iurl,self.imgdname)
                         print iurl
@@ -224,7 +242,7 @@ class Foo(Messg):
                     self.zd=i
                     self.page=j
                     self.imgdown()
-                print "第"+str(j)+"页下载完毕"
+                print u'第'+str(j)+u'页下载完毕'
                 
                 if j == int(a[i][2]):
                     self.clndir(j)
@@ -248,14 +266,17 @@ class Foo(Messg):
 ###读取配置###
     def iniget(self):
         self.localdir=u'缓存列表'
+        self.localdown=u'本子'
         if os.path.exists(self.localdir) == False:
             os.mkdir(self.localdir)
+        if os.path.exists(self.localdown) == False:
+            os.mkdir(self.localdown)            
         conf=ConfigParser.ConfigParser()
-        conf.read("hmg.ini")
+        conf.read("hmg.txt")
         self.url=conf.get("config","url")
         if self.url[-1] != '/':
             self.url=self.url+'/'
-        elif self.url[:26] != "https://hmghmg.xyz/search/":
+        elif self.url[:26] != "https://hmghmg.xyz/search/" and self.url[19:21] not in ["cn","en","ja"]:
             self.weberr()
         self.region=conf.get("config","region")
         self.zd=int(conf.get("config","zd"))
@@ -278,16 +299,27 @@ class Foo(Messg):
 ###main###    
     def __init__(self):
         self.iniget()
+        print self.url
         self.hzflag=hzflag
         self.page=page
-        print self.url
-        self.localf=self.localdir+"\\"+self.url.split("/")[4]+"("+self.url.split("/")[5]+").txt"
-        self.cklocal()
-        self.zddep()
-        self.ckregion()
-        self.mckdir()
-        self.imgdown()
+        if self.url[19:21] in ["cn","en","ja"]:
+            self.zd=0
+            self.zdend=1
+            self.localddir=self.url.split("/")[5]
+            self.localf=self.localdir+"\\"+self.url.split("/")[5]+".txt"
+            self.cklocal()
+            self.mckdir()
+            self.imgdown()
+        else:
+            self.localddir=self.url.split("/")[4]+"("+self.url.split("/")[5]+")"
+            self.localf=self.localdir+"\\"+self.localddir+".txt"
+            self.cklocal()
+            self.zddep()
+            self.ckregion()
+            self.mckdir()
+            self.imgdown()
         
 
 ###开始下载###
 Foo()
+os.system('pause')
